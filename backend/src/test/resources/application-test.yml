@@ -1,0 +1,15 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+  datasource:
+    url: ""
+    username: ""
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: none
+logging:
+  level:
+    root: WARN

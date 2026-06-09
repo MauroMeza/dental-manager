@@ -1,0 +1,37 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: dental_db
+    environment:
+      POSTGRES_DB: dental_manager
+      POSTGRES_USER: dental_user
+      POSTGRES_PASSWORD: dental_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+  backend:
+    build: ../backend
+    container_name: dental_backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: dental_manager
+      DB_USER: dental_user
+      DB_PASSWORD: dental_pass
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+  frontend:
+    build: ../frontend
+    container_name: dental_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+volumes:
+  db_data:
