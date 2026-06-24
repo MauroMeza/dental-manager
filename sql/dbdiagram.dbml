@@ -1,0 +1,170 @@
+// Dental Manager - Modelo inicial (DBML para dbdiagram.io)
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table tenants {
+  id integer [primary key]
+  nombre varchar
+  modo varchar [note: 'saas | standalone']
+  creado_en timestamp
+}
+
+Table sucursales {
+  id integer [primary key]
+  tenant_id integer [not null]
+  nombre varchar
+  direccion varchar
+  creado_en timestamp
+}
+
+Table usuarios {
+  id integer [primary key]
+  tenant_id integer [not null]
+  sucursal_id integer
+  nombre varchar
+  email varchar
+  rol varchar [note: 'recepcion|cajero|admin|profesional']
+  creado_en timestamp
+}
+
+Table pacientes {
+  id integer [primary key]
+  tenant_id integer [not null]
+  sucursal_id integer
+  nombres varchar
+  apellidos varchar
+  rut varchar
+  fecha_nacimiento date
+  email varchar
+  telefono_movil varchar
+  deuda_total numeric(14,2) [default: 0]
+  creado_en timestamp
+}
+
+Table cajas {
+  id integer [primary key]
+  tenant_id integer [not null]
+  sucursal_id integer [not null]
+  usuario_apertura_id integer [not null]
+  fecha_apertura timestamp [not null]
+  fecha_cierre timestamp
+  saldo_inicial numeric(14,2) [not null, default: 0]
+  total_abonos numeric(14,2) [not null, default: 0]
+  total_gastos numeric(14,2) [not null, default: 0]
+  saldo_cierre numeric(14,2)
+  estado varchar [not null, note: 'abierta|cerrada']
+  creado_en timestamp
+}
+
+Table medios_pago {
+  id integer [primary key]
+  nombre varchar [unique]
+  considerado_en_reportes boolean [not null, default: true]
+}
+
+Table convenios {
+  id integer [primary key]
+  nombre varchar [unique]
+}
+
+Table movimientos_caja {
+  id integer [primary key]
+  caja_id integer [not null]
+  tipo varchar [not null, note: 'abono|gasto|ajuste']
+  monto numeric(14,2) [not null]
+  medio_pago_id integer
+  convenio_id integer
+  paciente_id integer
+  referencia varchar
+  boleta varchar
+  vencimiento date
+  creado_por integer
+  creado_en timestamp
+}
+
+Table boxes {
+  id integer [primary key]
+  sucursal_id integer [not null]
+  nombre varchar
+}
+
+Table citas {
+  id integer [primary key]
+  tenant_id integer [not null]
+  sucursal_id integer [not null]
+  paciente_id integer [not null]
+  profesional_id integer [not null, note: 'FK a usuarios.id (rol=profesional)']
+  box_id integer
+  inicio timestamp [not null]
+  fin timestamp [not null]
+  estado varchar [not null, note: 'confirmado|no_confirmado|en_sala_espera|atendiendo|atendido|no_asiste|anulada|reagendada']
+  situacion_saldo varchar [note: 'hay_saldo|no_hay_saldo']
+  creado_en timestamp
+}
+
+Table cita_confirmaciones {
+  id integer [primary key]
+  cita_id integer [not null]
+  canal varchar [not null, note: 'telefono|email|whatsapp|online']
+  confirmado boolean [not null]
+  creado_en timestamp
+}
+
+Table tratamientos_paciente {
+  id integer [primary key]
+  paciente_id integer [not null]
+  profesional_id integer
+  estado varchar [note: 'activo|finalizado|suspendido']
+  creado_en timestamp
+}
+
+Table enlaces_pago {
+  id integer [primary key]
+  paciente_id integer [not null]
+  monto numeric(14,2) [not null]
+  estado varchar [not null, note: 'pendiente|pagado|vencido']
+  url varchar [not null]
+  creado_en timestamp
+}
+
+Table presupuestos {
+  id integer [primary key]
+  paciente_id integer [not null]
+  profesional_id integer
+  monto_total numeric(14,2) [not null]
+  estado varchar [not null, note: 'borrador|enviado|aceptado|rechazado']
+  creado_en timestamp
+}
+
+// Relaciones
+Ref: sucursales.tenant_id > tenants.id
+Ref: usuarios.tenant_id > tenants.id
+Ref: usuarios.sucursal_id > sucursales.id
+Ref: pacientes.tenant_id > tenants.id
+Ref: pacientes.sucursal_id > sucursales.id
+Ref: cajas.tenant_id > tenants.id
+Ref: cajas.sucursal_id > sucursales.id
+Ref: cajas.usuario_apertura_id > usuarios.id
+Ref: movimientos_caja.caja_id > cajas.id
+Ref: movimientos_caja.medio_pago_id > medios_pago.id
+Ref: movimientos_caja.convenio_id > convenios.id
+Ref: movimientos_caja.paciente_id > pacientes.id
+Ref: movimientos_caja.creado_por > usuarios.id
+Ref: boxes.sucursal_id > sucursales.id
+Ref: citas.tenant_id > tenants.id
+Ref: citas.sucursal_id > sucursales.id
+Ref: citas.paciente_id > pacientes.id
+Ref: citas.profesional_id > usuarios.id
+Ref: citas.box_id > boxes.id
+Ref: cita_confirmaciones.cita_id > citas.id
+Ref: tratamientos_paciente.paciente_id > pacientes.id
+Ref: tratamientos_paciente.profesional_id > usuarios.id
+Ref: enlaces_pago.paciente_id > pacientes.id
+Ref: presupuestos.paciente_id > pacientes.id
+Ref: presupuestos.profesional_id > usuarios.id
+
+// Semillas mínimas
+Records medios_pago(id, nombre, considerado_en_reportes) {
+  1, 'Efectivo', true
+  2, 'Tarjeta', true
+  3, 'Transferencia', true
+}

@@ -1,0 +1,46 @@
+%% Diagrama de secuencia: Flujo de cita (llegada → sala de espera → atendiendo → atendido/no asiste)
+sequenceDiagram
+  actor Recepcion
+  participant FE as Frontend (Angular)
+  participant API as Backend API
+  participant AS as AgendaService
+  participant CR as CitaRepo
+  participant AUD as Auditoría
+
+  Recepcion->>FE: Marcar llegada del paciente
+  FE->>API: POST /citas/{id}/estado { estado: "EN_SALA_ESPERA" }
+  API->>AS: cambiarEstado(id, EN_SALA_ESPERA)
+  AS->>CR: updateEstado(id, EN_SALA_ESPERA, hora_llegada)
+  CR-->>AS: ok
+  AS->>AUD: registrar(evento="EN_SALA_ESPERA", citaId, usuario)
+  AUD-->>AS: ok
+  AS-->>API: ok
+  API-->>FE: 200 OK
+  FE-->>Recepcion: Cita en sala de espera
+
+  Note over FE,API: Después, profesional inicia atención
+  FE->>API: POST /citas/{id}/estado { estado: "ATENDIENDO" }
+  API->>AS: cambiarEstado(id, ATENDIENDO)
+  AS->>CR: updateEstado(id, ATENDIENDO, hora_inicio_atencion)
+  CR-->>AS: ok
+  AS->>AUD: registrar(evento="ATENDIENDO", citaId, usuario)
+  AS-->>API: ok
+  API-->>FE: 200 OK
+
+  alt Finalización atendido
+    FE->>API: POST /citas/{id}/estado { estado: "ATENDIDO" }
+    API->>AS: cambiarEstado(id, ATENDIDO)
+    AS->>CR: updateEstado(id, ATENDIDO, hora_fin)
+    CR-->>AS: ok
+    AS->>AUD: registrar(evento="ATENDIDO", citaId, usuario)
+    AS-->>API: ok
+    API-->>FE: 200 OK
+  else No asiste
+    FE->>API: POST /citas/{id}/estado { estado: "NO_ASISTE" }
+    API->>AS: cambiarEstado(id, NO_ASISTE)
+    AS->>CR: updateEstado(id, NO_ASISTE)
+    CR-->>AS: ok
+    AS->>AUD: registrar(evento="NO_ASISTE", citaId, usuario)
+    AS-->>API: ok
+    API-->>FE: 200 OK
+  end

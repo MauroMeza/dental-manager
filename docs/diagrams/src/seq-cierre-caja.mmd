@@ -1,0 +1,30 @@
+%% Diagrama de secuencia: Cierre de caja
+sequenceDiagram
+  actor Cajero
+  participant FE as Frontend (Angular)
+  participant API as Backend API
+  participant CS as CajaService
+  participant MR as MovimientoRepo
+  participant CR as CajaRepo
+  participant AUD as Auditoría
+  participant RS as ReportService
+
+  Cajero->>FE: Clic "Cerrar caja"
+  FE->>API: POST /cajas/{cajaId}/cerrar
+  API->>CS: cerrarCaja(cajaId)
+  CS->>MR: sumAbonos(cajaId)
+  MR-->>CS: totalAbonos
+  CS->>MR: sumGastos(cajaId)
+  MR-->>CS: totalGastos
+  Note right of CS: saldoCierre = saldoInicial + totalAbonos - totalGastos
+  CS->>CR: actualizarCierre(cajaId, totalAbonos, totalGastos, saldoCierre)
+  CR-->>CS: ok
+  CS->>AUD: registrar(evento="CIERRE_CAJA", cajaId, usuario, totales)
+  AUD-->>CS: ok
+  CS-->>API: cierreOK(saldoCierre)
+  API-->>FE: 200 OK {saldoCierre}
+  FE-->>Cajero: Mostrar resumen y opción de exportar
+  API-->>RS: generarResumen(cajaId)
+  Note right of RS: Puede ejecutarse asíncrono
+
+  Note over FE,API: Regla de reportería: excluir pagos por "descuentos por planilla" cuando aplique

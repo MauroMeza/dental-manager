@@ -1,0 +1,67 @@
+%% C2 - Containers: Plataforma Dental Manager (SaaS y Standalone)
+%% Nota: Este diagrama es orientativo. Los contenedores representan despliegues lógicos.
+
+%% SaaS (multi-tenant)
+flowchart TB
+  %% Actores
+  user[Usuario/Staff (Browser)]
+  admin[Operador Multi-clínica (Admin SaaS)]
+
+  %% Frontend
+  fe[Frontend Web
+  Angular 22 + Material + Tailwind]
+
+  %% Backend
+  be[Backend API
+  Spring Boot 3.3.0 (Java 21)
+  REST/JSON]
+
+  %% DB
+  db[(PostgreSQL 16)
+  Aislamiento lógico por tenant]
+
+  %% Integraciones externas
+  pay[[Pasarela de Pagos]]
+  bot[[Chatbot/WhatsApp]]
+  mail[[Email/SMS Provider]]
+
+  %% Control plane SaaS
+  cp[Admin Plataforma (SaaS)
+  Gestión de tenants/planes/facturación]
+
+  %% Relaciones principales
+  user --> fe
+  fe --> be
+  be --> db
+  be --> pay
+  be --> bot
+  be --> mail
+  admin --> cp
+  cp -. gobierna .- be
+  cp -. gobierna .- db
+
+  %% Notas
+  classDef note fill:#f7f7f7,stroke:#bbb,color:#333;
+  tn["Multi-tenant: RBAC por rol y tenant, throttling por tenant, auditoría."]:::note
+  dbn["Datos segregados lógicamente por tenant (p.ej., columna tenant_id, esquemas o particionamiento)."]:::note
+  tn --- dbn
+
+%% Standalone (single-tenant)
+flowchart TB
+  subgraph Standalone [Standalone - Despliegue por clínica]
+    su[Usuario/Staff (Browser)]
+    sfe[Frontend Web (Angular)]
+    sbe[Backend API (Spring Boot)]
+    sdb[(PostgreSQL)]
+
+    su --> sfe
+    sfe --> sbe
+    sbe --> sdb
+
+    sbe --> spay[[Pasarela de Pagos]]
+    sbe --> smail[[Email/SMS Provider]]
+  end
+
+%% Leyenda
+%% - SaaS: un despliegue multi-tenant con aislamiento lógico y plano de control (admin plataforma).
+%% - Standalone: la misma base funcional, pero desplegada por clínica (single-tenant), sin control plane central.
