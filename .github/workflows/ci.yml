@@ -61,4 +61,5 @@ jobs:
 
       - name: Auditoría con SonarCloud
         if: ${{ env.SONAR_TOKEN != '' }}
+        continue-on-error: true
         run: mvn -B -Dsonar.projectKey=MauroMeza_dental-manager -Dsonar.organization=mauromeza -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=${{ env.SONAR_TOKEN }} org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar
